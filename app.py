@@ -1,31 +1,51 @@
 import numpy as np
-from flask import Flask, request, jsonify, render_template
+import pandas as pd
+from flask_cors import  cross_origin
+from flask import Flask, request, render_template
 import pickle
 
 app = Flask(__name__)
-model = pickle.load(open('diabetes_prediction_2aug.pkl', 'rb'))
 
+@cross_origin()
 @app.route('/')
 def home():
     return render_template('indexf.html')
-
+@cross_origin()
 @app.route('/predict',methods=['POST'])
 def predict():
-    '''
-    For rendering results on HTML GUI
-    '''
-    int_features = [int(x) for x in request.form.values()]
-    final_features = [np.array(int_features)]
-    prediction = model.predict(final_features)
+    Age = int(request.form['Age'])
+    Gender = int(request.form['Gender'])
+    Polyuria = int(request.form['Polyuria'])
+    Polydipsia = int(request.form['Polydipsia'])
+    sudden weight loss = int(request.form['sudden weight loss'])
+    weakness = int(request.form['weakness'])
+    Polyphagia = int(request.form['Polyphagia'])
+    visual blurring = int(request.form['visual blurring'])
+    Irritability = int(request.form['Irritability'])
+    partial paresis = int(request.form['partial paresis'])
+    Alopecia = int(request.form['Alopecia'])
 
-    output = prediction[0]
-    
-    if output ==0:
-        
-        return render_template('indexf.html', prediction_text='Patient is $ {}'.format('Non Diabetic'))
+    filename = 'diabetes_prediction_2aug.pkl'
+    loaded_model = pickle.load(open(filename, 'rb'))  # loading the model file from the storage
+    #scalar = pickle.load(open("sandardScalar.sav", 'rb'))
+    # predictions using the loaded model file
+    prediction = loaded_model.predict(
+        [[Age, Gender, Polyuria, Polydipsia,sudden weight loss,weakness,Polyphagia,
+          visual blurring,Irritability,partial paresis,Alopecia]])
+    if prediction ==[1]:
+            prediction = "diabetes"
+
     else:
-        return render_template('indexf.html', prediction_text='Patient is $ {}'.format('Diabetic'))
+            prediction = "Non diabetic"
+
+    # showing the prediction results in a UI
+    if  prediction =="diabetes":
+
+        return render_template('diabetes.html', prediction=prediction)
+    else:
+        return render_template('non diabetes.html',prediction=prediction)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=8000, debug=True)
+	#app.run(debug=True)
